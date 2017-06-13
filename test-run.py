@@ -15,6 +15,16 @@ import time
 import shlex
 import sys
 
+
+def subprocess_call(command):
+    try:
+        p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+        out,err = p.communicate()
+        return out
+    except Exception as e:
+        print("Error occured..",e)
+        return 0
+
 def create_network(net_name,net_range):
   try:
     p = subprocess.Popen(["openstack","network","create",net_name], stdout=subprocess.PIPE)
@@ -27,9 +37,10 @@ def create_network(net_name,net_range):
     print(out)
     print("subnet"+net_name+" got created")
 
-    p = subprocess.Popen(shlex.split("openstack router add rtr-test1-test2 subnet"+net_name), stdout=subprocess.PIPE)
+    p = subprocess.Popen(shlex.split("openstack router add subnet rtr-test1-test2 subnet"+net_name), stdout=subprocess.PIPE)
     out,err = p.communicate()
-    print("Interface network1 connected to router")
+    print(out)
+    print("Interface subnet%s connected to router"%net_name)
 
   except Exception as e:
     print("Error occured",e)
@@ -67,12 +78,15 @@ def secgroup_rules_add():
 
 
 
-
+"""def create_vm():
+    try:
+"""
 
 
 def cleanup():
    
     #TODO : router remove interface and router delete have to add
+    
 
     try:
         p = subprocess.Popen(["openstack","network","list","-c","ID"], stdout=subprocess.PIPE)
@@ -88,7 +102,14 @@ def cleanup():
     network_id=out.split('\n')
     network_id = [ ele for ele in network_id if ((ele!='ID') and (ele != ''))]
     print(network_id)
-    
+
+    result = subprocess_call("openstack router remove subnet rtr-test1-test2 subnettest-net1")
+    result2 = subprocess_call("openstack router remove subnet rtr-test1-test2 subnettest-net2")
+    print("Interface removed from router rtr-test1-test2")
+   
+    router_del = subprocess_call("openstack router delete rtr-test1-test2")
+    print(router_del)
+ 
     for i in network_id:
         try:
             p=subprocess.Popen(["openstack","network","delete",i],stdout=subprocess.PIPE)
@@ -105,8 +126,6 @@ def cleanup():
         print("Error occured",e)
 
   
-    
-
     print("All test data got deleted")
 
 
@@ -122,4 +141,4 @@ if __name__ == '__main__':
          secgroup_rules_add()
          cleanup()
      else:
-         print("Required arguments 1.cleanup 2.all")
+         print("Required arguments 1.--cleanup 2.--all")
